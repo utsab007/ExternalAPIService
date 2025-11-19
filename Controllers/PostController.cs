@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure.Security.KeyVault.Secrets;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using ThirdPartyApiDemo.Models;
 using ThirdPartyApiDemo.Services;
 
@@ -10,10 +12,12 @@ namespace ThirdPartyApiDemo.Controllers
     public class PostController : ControllerBase
     {
         private readonly IPostService _postService;
+        private readonly SecretClient _secretClient;
         //private static int _callCount = 0;
-        public PostController(IPostService postService)
+        public PostController(IPostService postService, SecretClient secretClient)
         {
             _postService = postService;
+            _secretClient = secretClient;
         }
 
         [HttpGet]
@@ -55,6 +59,21 @@ namespace ThirdPartyApiDemo.Controllers
         {
             var success = await _postService.DeleteAsync(id);
             return success ? NoContent() : NotFound();
+        }
+
+        [HttpGet]
+        [Route("secret-key")]
+        public async Task<ActionResult<string>> GetSecretKey()
+        {
+            try
+            {
+                var secret = await _secretClient.GetSecretAsync("DbConnectionString");
+                return Ok(new { ConnectionString = secret.Value.Value });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new {Error = ex.Message});
+            }
         }
     }
 }

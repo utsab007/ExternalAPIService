@@ -12,6 +12,12 @@ namespace ThirdPartyApiDemo
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var keyVaultEndpoint = builder.Configuration["PostAPI:KeyVaultURL"] ?? string.Empty;
+
+            var secretClient = new Azure.Security.KeyVault.Secrets.SecretClient(new Uri(keyVaultEndpoint), new Azure.Identity.DefaultAzureCredential());
+
+            builder.Services.AddSingleton(secretClient);
+
             // Register services
             builder.Services.AddHttpClient(); // Needed for HttpClient
             builder.Services.AddTransient<IHttpClientHelper, HttpClientHelper>();
