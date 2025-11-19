@@ -8,21 +8,35 @@ namespace ThirdPartyApiDemo.Services
     {
         private readonly IHttpClientHelper _http;
         private readonly string _baseUrl;
+        private readonly ILogger<PostService> _logger;
 
-        public PostService(IHttpClientHelper httpClientHelper, IConfiguration configuration)
+        public PostService(IHttpClientHelper httpClientHelper, IConfiguration configuration,ILogger<PostService> logger)
         {
             _http = httpClientHelper;
-            _baseUrl = configuration["PostAPI:BaseUrl"].ToString();
+            _baseUrl = Convert.ToString(configuration["PostAPI:BaseUrl"]) ?? "";
+            _logger = logger;
+
         }
         public async Task<List<Post>> GetAllAsync()
         {
             var result = await _http.GetAsync<List<Post>>(_baseUrl);
+            _logger.LogInformation("Fetched {Count} posts", result?.Count ?? 0);
+
             return result ?? new List<Post>();
         }
 
         public async Task<Post?> GetByIdAsync(int id)
         {
-            return await _http.GetAsync<Post>($"{_baseUrl}/{id}");
+            var data = await _http.GetAsync<Post>($"{_baseUrl}/{id}");
+            if (data != null)
+            {
+                _logger.LogInformation("Fetched post with ID {Id}", id);
+            }
+            else
+            {
+                _logger.LogWarning("Post with ID {Id} not found", id);
+            }
+            return data;
         }
 
         public async Task<Post?> CreateAsync(Post post)
